@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+	<name>Service Rush</name>
+
+	<author>thekiborg</author>
+
+	<packageId>thekiborg.ServiceRush</packageId> 
+	
+	<description>In restaurants, a service rush is the period when the highest volume of orders are sent into the kitchen at once.
+
+		[h2]About[/h2]
+		With Service Rush I tried to make colonies look a bit more lively when pawns are performing bills. Instead of being chained to the bench they're doing their work at, pawns now will dart around the room while they progress the recipe.
+
+		When performing a recipe, pawns will have a chance to:
+		[list]
+		[*] Sit in front of the bench, just like in Vanilla.
+		[*] Interact with a building linked to the bench.
+		[*] Interact with any storage building on the room.
+		[/list]
+		Pawns will sit at these different locations for a random amount of time, which should hopefully give you the feeling of them going to fetch tools or ingredients they might need to fulfill their job!
+
+		[h2]Compatiblity[/h2]
+		I've tested this mod in isolation, and asked people to throw them on their modlists. I cannot promise it will work with every modlist, but a proper error report will make it possible that I can fix it fast.
+
+		Might be incompatible with Common Sense at the moment.
+
+		Si me preguntas algo de Combat Extended te muerdo.
+
+		[h1]REPORT BUGS WITH A [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2873415404]HUGSLIB LOG[/url] IN MY [url=https://discord.gg/68nkHdh2vR]DISCORD[/url].[/h1]
+
+		[h2]Want to support my mods?[/h2]
+		[url=https://ko-fi.com/thekiborg][img]https://assets-global.website-files.com/5c14e387dab576fe667689cf/64f1a9ddd0246590df69ea06_kofi_short_button_white%25402x-p-500.png[/img][/url]
+
+		[h2]Thanks [/h2]
+		I've made this mod as a gift for a friend who was missing something like this in Rimworld. You know who you are. Thank you for everything.</description>
+
+	<supportedVersions>
+		<li>1.6</li>
+	</supportedVersions>
+
+	<modDependencies>
+		<li>
+			<packageId>brrainz.harmony</packageId>
+			<displayName>Harmony</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+		</li>
+	</modDependencies>
+
+	<loadAfter>
+		<li>brrainz.harmony</li>
+	</loadAfter>
+
+</ModMetaData>
