@@ -21,6 +21,7 @@
 		public int waitTicksLeft;
 		public Building thingLook;
 		public BillPathingTarget pathingTarget;
+		public IntVec3 cellTarget;
 
 
 		public void PickPathingTarget()
@@ -70,6 +71,9 @@
 					break;
 				case BillPathingTarget.Storage:
 					waitTicksLeft = StorageWaitTime.RandomInRange;
+					break;
+				default:
+					Log.Warning("AssignWaitTime received no BillPathingTarget");
 					break;
 			}
 		}

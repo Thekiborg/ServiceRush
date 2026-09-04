@@ -6,6 +6,7 @@ namespace ServiceRush
 	public static class BillPathingHandler
 	{
 		private static readonly Dictionary<Pawn, BillPathingData> data = [];
+		private static readonly List<IntVec3> tempFoundCells = [];
 
 
 		public static void TryInteractWithRoom(Toil toil)
@@ -15,17 +16,31 @@ namespace ServiceRush
 				return;
 			}
 
+
 			data.TryAdd(toil.actor, new());
-			if (toil.actor.pather.Moving)
+			// Should only path once, unless it can't find a cell, then it runs this once more
+			if (data.TryGetValue(toil.actor).waitTicksLeft <= 0)
 			{
 				data[toil.actor].Reset();
+				data[toil.actor].PickPathingTarget();
 				data[toil.actor].AssignWaitTime();
+
+				IntVec3 potentialCell = TryGetPathingCell(toil);
+				if (potentialCell == IntVec3.Invalid)
+				{
+					data[toil.actor].Reset();
+					return;
+				}
+
+				data[toil.actor].cellTarget = potentialCell;
+				toil.actor.pather.StartPath(potentialCell, PathEndMode.OnCell);
+
 				toil.handlingFacing = false;
 				return;
 			}
 
 			// Wait while looking at the target
-			if (!toil.actor.pather.Moving && data.TryGetValue(toil.actor).waitTicksLeft > 0)
+			if (toil.actor.Position == data.TryGetValue(toil.actor).cellTarget && data.TryGetValue(toil.actor).waitTicksLeft > 0)
 			{
 				toil.handlingFacing = true;
 				data[toil.actor].waitTicksLeft--;
@@ -39,24 +54,13 @@ namespace ServiceRush
 				}
 				return;
 			}
-
-			data[toil.actor].PickPathingTarget();
-			IntVec3 cell = TryGetRandomCell(toil);
-
-			if (cell == IntVec3.Invalid)
-			{
-				data[toil.actor].Reset();
-				return;
-			}
-			toil.actor.pather.StartPath(cell, PathEndMode.OnCell);
 		}
 
 
 		private static bool IsCellWalkable(IntVec3 cell, Pawn pawn)
 		{
 			return cell.WalkableBy(pawn.Map, pawn)
-					&& !cell.Filled(pawn.Map)
-					&& cell.GetFirstBuilding(pawn.Map) is null;
+					&& !cell.Filled(pawn.Map);
 		}
 
 
@@ -74,7 +78,7 @@ namespace ServiceRush
 			}
 			while (iter < 10);
 
-			Log.Message("Not found?");
+			//Log.Message("Not found?");
 			return null;
 		}
 
@@ -90,7 +94,7 @@ namespace ServiceRush
 		}
 
 
-		private static IntVec3 TryGetRandomCell(Toil toil)
+		private static IntVec3 TryGetPathingCell(Toil toil)
 		{
 			IntVec3 cell = IntVec3.Invalid;
 			int iter = 0;
@@ -101,8 +105,18 @@ namespace ServiceRush
 
 			do
 			{
-				var tempCell = GetCellsFacingRot(pickedBuilding).RandomElement();
-				Log.Message(tempCell);
+				IntVec3 tempCell = IntVec3.Zero;
+				switch (data[toil.actor].pathingTarget)
+				{
+					case BillPathingData.BillPathingTarget.BillGiver:
+						tempCell = GetInteractionCellOrCellsFacingRot(pickedBuilding).RandomElement();
+						break;
+
+					case BillPathingData.BillPathingTarget.Linkable:
+					case BillPathingData.BillPathingTarget.Storage:
+						tempCell = pickedBuilding.RandomAdjacentCellCardinal();
+						break;
+				}
 				if (tempCell.GetRoom(pickedBuilding.Map) == pickedBuilding.GetRoom()
 					&& IsCellWalkable(tempCell, toil.actor))
 				{
@@ -118,17 +132,35 @@ namespace ServiceRush
 		}
 
 
-		private static List<IntVec3> GetCellsFacingRot(Thing building)
+		private static List<IntVec3> GetInteractionCellOrCellsFacingRot(Thing building)
 		{
-			List<IntVec3> offsetCells = [];
+			tempFoundCells.Clear();
+			if (TryGetInteractionCellIfChairPresent(building, out IntVec3 foundCell))
+			{
+				tempFoundCells.Add(foundCell);
+				return tempFoundCells;
+			}
 
 			var occupiedCells = GenAdj.CellsOccupiedBy(building).ToList();
 			for (int i = 0; i < occupiedCells.Count; i++)
 			{
-				offsetCells.Add(occupiedCells[i] + CellOffsetByRotation(building.Rotation));
+				tempFoundCells.Add(occupiedCells[i] + CellOffsetByRotation(building.Rotation));
 			}
 
-			return offsetCells;
+			return tempFoundCells;
+		}
+
+
+		private static bool TryGetInteractionCellIfChairPresent(Thing building, out IntVec3 foundCell)
+		{
+			foundCell = IntVec3.Invalid;
+			Building chair = building.InteractionCell.GetEdifice(building.Map);
+			if (chair is not null && chair.def.category == ThingCategory.Building && chair.def.building.isSittable)
+			{
+				foundCell = chair.Position;
+				return true;
+			}
+			return false;
 		}
 
 
