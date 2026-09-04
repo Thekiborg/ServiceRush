@@ -1,4 +1,5 @@
-﻿using Verse.AI;
+﻿using System.Linq;
+using Verse.AI;
 
 namespace ServiceRush
 {
@@ -9,6 +10,11 @@ namespace ServiceRush
 
 		public static void TryInteractWithRoom(Toil toil)
 		{
+			if (toil.actor.GetRoom().OutdoorsForWork)
+			{
+				return;
+			}
+
 			data.TryAdd(toil.actor, new());
 			if (toil.actor.pather.Moving)
 			{
@@ -25,18 +31,12 @@ namespace ServiceRush
 				data[toil.actor].waitTicksLeft--;
 				if (data[toil.actor].thingLook is null)
 				{
-					Log.Message("No thinglook");
 					data[toil.actor].thingLook = TryGetRandomBuildingToLookAt(toil);
 				}
 				else
 				{
 					toil.actor.rotationTracker.FaceTarget(data[toil.actor].thingLook);
 				}
-				return;
-			}
-
-			if (toil.actor.GetRoom().OutdoorsForWork)
-			{
 				return;
 			}
 
@@ -101,7 +101,8 @@ namespace ServiceRush
 
 			do
 			{
-				var tempCell = pickedBuilding.RandomAdjacentCellCardinal();
+				var tempCell = GetCellsFacingRot(pickedBuilding).RandomElement();
+				Log.Message(tempCell);
 				if (tempCell.GetRoom(pickedBuilding.Map) == pickedBuilding.GetRoom()
 					&& IsCellWalkable(tempCell, toil.actor))
 				{
@@ -114,6 +115,35 @@ namespace ServiceRush
 			while (iter < 10 && cell == IntVec3.Invalid);
 
 			return cell;
+		}
+
+
+		private static List<IntVec3> GetCellsFacingRot(Thing building)
+		{
+			List<IntVec3> offsetCells = [];
+
+			var occupiedCells = GenAdj.CellsOccupiedBy(building).ToList();
+			for (int i = 0; i < occupiedCells.Count; i++)
+			{
+				offsetCells.Add(occupiedCells[i] + CellOffsetByRotation(building.Rotation));
+			}
+
+			return offsetCells;
+		}
+
+
+		private static IntVec3 CellOffsetByRotation(Rot4 rotation)
+		{
+			if (rotation == Rot4.South)
+				return IntVec3.North;
+			else if (rotation == Rot4.North)
+				return IntVec3.South;
+			else if (rotation == Rot4.East)
+				return IntVec3.West;
+			else if (rotation == Rot4.West)
+				return IntVec3.East;
+			else
+				return IntVec3.Zero;
 		}
 
 
